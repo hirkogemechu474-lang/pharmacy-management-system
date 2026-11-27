@@ -17,7 +17,7 @@ const pool = new Pool({
 });
 
 // ─── CHANGE THE DEMO PASSWORD HERE ───
-const DEMO_PASSWORD = 'password123';
+const DEMO_PASSWORD = 'password1234';
 // ─────────────────────────────────────
 
 const SALT_ROUNDS = 12;
