@@ -16,6 +16,10 @@ const pool = new Pool({
   database: 'pharmacy',
 });
 
+// ─── CHANGE THE DEMO PASSWORD HERE ───
+const DEMO_PASSWORD = 'password123';
+// ─────────────────────────────────────
+
 const SALT_ROUNDS = 12;
 
 async function sleep(ms) {
@@ -38,7 +42,7 @@ async function main() {
     console.log('🌱 Starting seed...\n');
 
     // ── 1. USERS ──────────────────────────────────────────────────────────
-    const hashedPassword = await bcrypt.hash('password123', SALT_ROUNDS);
+    const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, SALT_ROUNDS);
 
     const userResult = await client.query(
       `INSERT INTO users (email, password, "firstName", "lastName", role, "isEmailVerified", "isTotpEnabled", "createdAt", "updatedAt")
@@ -67,16 +71,19 @@ async function main() {
 
     // ── 2. CATEGORIES ─────────────────────────────────────────────────────
     const categoryResult = await client.query(
-      `INSERT INTO categories (name, description, created_at, updated_at)
+      `INSERT INTO categories (name, description, "createdAt", "updatedAt")
        VALUES
-         ('Pain Relief', 'Analgesics and pain management medications', NOW(), NOW()),
-         ('Antibiotics', 'Antibacterial and antimicrobial medications', NOW(), NOW()),
-         ('Vitamins & Supplements', 'Dietary supplements and vitamins', NOW(), NOW()),
-         ('Cold & Flu', 'Cold, flu, and respiratory relief', NOW(), NOW()),
-         ('First Aid', 'Wound care and first aid supplies', NOW(), NOW()),
-         ('Skin Care', 'Dermatological and skin care products', NOW(), NOW()),
-         ('Digestive Health', 'Antacids and digestive aids', NOW(), NOW()),
-         ('Pediatrics', "Children's medications and care", NOW(), NOW())
+          ('Pain Relief', 'Analgesics and pain management medications', NOW(), NOW()),
+          ('Antibiotics', 'Antibacterial and antimicrobial medications', NOW(), NOW()),
+          ('Vitamins & Supplements', 'Dietary supplements and vitamins', NOW(), NOW()),
+          ('Cold & Flu', 'Cold, flu, and respiratory relief', NOW(), NOW()),
+          ('First Aid', 'Wound care and first aid supplies', NOW(), NOW()),
+          ('Skin Care', 'Dermatological and skin care products', NOW(), NOW()),
+          ('Digestive Health', 'Antacids and digestive aids', NOW(), NOW()),
+          ('Pediatrics', 'Children''s medications and care', NOW(), NOW())
+       ON CONFLICT (name) DO UPDATE SET
+          description = EXCLUDED.description,
+          "updatedAt" = NOW()
        RETURNING id, name`
     );
 
@@ -88,12 +95,18 @@ async function main() {
 
     // ── 3. SUPPLIERS ──────────────────────────────────────────────────────
     const supplierResult = await client.query(
-      `INSERT INTO suppliers (name, contact_name, email, phone, address, created_at, updated_at)
+      `INSERT INTO suppliers (name, "contactName", email, phone, address, "createdAt", "updatedAt")
        VALUES
-         ('MediSupply Co.', 'Robert Chen', 'robert@medisupply.com', '555-0101', '123 Industrial Blvd, Suite 100', NOW(), NOW()),
-         ('PharmaDirect', 'Sarah Williams', 'sarah@pharmadirect.com', '555-0102', '456 Wholesale Ave, Unit 5', NOW(), NOW()),
-         ('HealthCare Distributors', 'Michael Torres', 'michael@healthcaredist.com', '555-0103', '789 Distribution Center Rd', NOW(), NOW()),
-         ('Wellness Wholesale', 'Emily Davis', 'emily@wellnesswholesale.com', '555-0104', '321 Wellness Way', NOW(), NOW())
+          ('MediSupply Co.', 'Robert Chen', 'robert@medisupply.com', '555-0101', '123 Industrial Blvd, Suite 100', NOW(), NOW()),
+          ('PharmaDirect', 'Sarah Williams', 'sarah@pharmadirect.com', '555-0102', '456 Wholesale Ave, Unit 5', NOW(), NOW()),
+          ('HealthCare Distributors', 'Michael Torres', 'michael@healthcaredist.com', '555-0103', '789 Distribution Center Rd', NOW(), NOW()),
+          ('Wellness Wholesale', 'Emily Davis', 'emily@wellnesswholesale.com', '555-0104', '321 Wellness Way', NOW(), NOW())
+       ON CONFLICT (name) DO UPDATE SET
+          "contactName" = EXCLUDED."contactName",
+          email = EXCLUDED.email,
+          phone = EXCLUDED.phone,
+          address = EXCLUDED.address,
+          "updatedAt" = NOW()
        RETURNING id, name`
     );
 
@@ -112,7 +125,7 @@ async function main() {
       { sku: 'CFR-001-005', name: 'Cold & Flu Relief Syrup', barcode: '8901234567894', description: 'Multi-symptom cold and flu relief', unit: 'bottle', salePrice: 9.99, category: 'Cold & Flu', doesNotExpire: false },
       { sku: 'BND-001-006', name: 'Adhesive Bandages Assorted', barcode: '8901234567895', description: 'Sterile adhesive bandages various sizes', unit: 'box', salePrice: 4.50, category: 'First Aid', doesNotExpire: true },
       { sku: 'ANT-001-007', name: 'Antacid Chewable Tablets', barcode: '8901234567896', description: 'Fast-acting heartburn relief', unit: 'tablet', salePrice: 5.75, category: 'Digestive Health', doesNotExpire: false },
-      { sku: 'CPD-100-008', name: 'Children\'s Pain Relief 100mg', barcode: '8901234567897', description: 'Pediatric pain and fever relief', unit: 'ml', salePrice: 7.25, category: 'Pediatrics', doesNotExpire: false },
+      { sku: 'CPD-100-008', name: "Children's Pain Relief 100mg", barcode: '8901234567897', description: 'Pediatric pain and fever relief', unit: 'ml', salePrice: 7.25, category: 'Pediatrics', doesNotExpire: false },
       { sku: 'ALV-001-009', name: 'Aloe Vera Gel', barcode: '8901234567898', description: 'Soothing aloe vera skin gel', unit: 'tube', salePrice: 6.99, category: 'Skin Care', doesNotExpire: false },
       { sku: 'MVI-001-010', name: 'Multivitamin Daily', barcode: '8901234567899', description: 'Complete daily multivitamin', unit: 'tablet', salePrice: 14.50, category: 'Vitamins & Supplements', doesNotExpire: true },
     ];
@@ -120,8 +133,14 @@ async function main() {
     const productIds = [];
     for (const p of products) {
       const res = await client.query(
-        `INSERT INTO products (sku, name, barcode, description, unit, sale_price, is_active, does_not_expire, category_id, created_at, updated_at)
+        `INSERT INTO products (sku, name, barcode, description, unit, "salePrice", "isActive", "doesNotExpire", "categoryId", "createdAt", "updatedAt")
          VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8, NOW(), NOW())
+         ON CONFLICT (sku) DO UPDATE SET
+            name = EXCLUDED.name,
+            description = EXCLUDED.description,
+            "salePrice" = EXCLUDED."salePrice",
+            "categoryId" = EXCLUDED."categoryId",
+            "updatedAt" = NOW()
          RETURNING id`,
         [p.sku, p.name, p.barcode, p.description, p.unit, p.salePrice, p.doesNotExpire, catByName[p.category]]
       );
@@ -158,7 +177,7 @@ async function main() {
       const product = productIds.find((p) => p.sku === b.productSku);
       const supplier = suppliers.find((s) => s.name === b.supplier);
       const res = await client.query(
-        `INSERT INTO batches (product_id, supplier_id, batch_number, expiry_date, received_quantity, quantity_on_hand, quantity_reserved, unit_cost, received_at, notes, created_at, updated_at)
+        `INSERT INTO batches ("productId", "supplierId", "batchNumber", "expiryDate", "receivedQuantity", "quantityOnHand", "quantityReserved", "unitCost", "receivedAt", notes, "createdAt", "updatedAt")
          VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8, 'Seed batch', NOW(), NOW())
          RETURNING id`,
         [product.id, supplier.id, b.batchNumber, b.expiry, b.receivedQty, b.onHand, b.unitCost, now]
@@ -197,7 +216,7 @@ async function main() {
       const totalCost = p.items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
 
       const purchaseRes = await client.query(
-        `INSERT INTO purchases (supplier_id, received_by_id, invoice_number, notes, received_at, total_cost, created_at, updated_at)
+        `INSERT INTO purchases ("supplierId", "receivedById", "invoiceNumber", notes, "receivedAt", "totalCost", "createdAt", "updatedAt")
          VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
          RETURNING id`,
         [supplier.id, p.receivedBy, p.invoiceNumber, p.notes, now, totalCost]
@@ -211,13 +230,13 @@ async function main() {
         const lineTotal = item.quantity * item.unitCost;
 
         await client.query(
-          `INSERT INTO purchase_items (purchase_id, product_id, batch_id, quantity, unit_cost, line_total, created_at, updated_at)
+          `INSERT INTO purchase_items ("purchaseId", "productId", "batchId", quantity, "unitCost", "lineTotal", "createdAt", "updatedAt")
            VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
           [purchaseId, product.id, batch.id, item.quantity, item.unitCost, lineTotal]
         );
 
         await client.query(
-          `INSERT INTO stock_movements (movement_type, reference_type, product_id, batch_id, purchase_id, purchase_item_id, quantity, unit_cost, occurred_at, note, created_at)
+          `INSERT INTO stock_movements ("movementType", "referenceType", "productId", "batchId", "purchaseId", "purchaseItemId", quantity, "unitCost", "occurredAt", note, "createdAt")
            VALUES ('stock_in', 'purchase', $1, $2, $3, $4, $5, $6, $7, 'Purchase receipt', NOW())`,
           [product.id, batch.id, purchaseId, undefined, item.quantity, item.unitCost, now]
         );
@@ -247,7 +266,7 @@ async function main() {
       const totalAmount = s.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
       const saleRes = await client.query(
-        `INSERT INTO sales (sold_by_id, notes, sold_at, total_amount, created_at, updated_at)
+        `INSERT INTO sales ("soldById", notes, "soldAt", "totalAmount", "createdAt", "updatedAt")
          VALUES ($1, $2, $3, $4, NOW(), NOW())
          RETURNING id`,
         [s.soldBy, s.notes, now, totalAmount]
@@ -266,7 +285,7 @@ async function main() {
         }
 
         const saleItemRes = await client.query(
-          `INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, line_total, created_at, updated_at)
+          `INSERT INTO sale_items ("saleId", "productId", quantity, "unitPrice", "lineTotal", "createdAt", "updatedAt")
            VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
            RETURNING id`,
           [saleId, product.id, item.quantity, item.unitPrice, lineTotal]
@@ -274,18 +293,18 @@ async function main() {
         const saleItemId = saleItemRes.rows[0].id;
 
         await client.query(
-          `INSERT INTO sale_item_allocations (sale_item_id, batch_id, quantity, unit_cost, created_at)
+          `INSERT INTO sale_item_allocations ("saleItemId", "batchId", quantity, "unitCost", "createdAt")
            VALUES ($1, $2, $3, $4, NOW())`,
           [saleItemId, availableBatch.id, item.quantity, availableBatch.unitCost]
         );
 
         await client.query(
-          `UPDATE batches SET quantity_on_hand = quantity_on_hand - $1 WHERE id = $2`,
+          `UPDATE batches SET "quantityOnHand" = "quantityOnHand" - $1 WHERE id = $2`,
           [item.quantity, availableBatch.id]
         );
 
         await client.query(
-          `INSERT INTO stock_movements (movement_type, reference_type, product_id, batch_id, sale_id, sale_item_id, quantity, unit_price, occurred_at, note, created_at)
+          `INSERT INTO stock_movements ("movementType", "referenceType", "productId", "batchId", "saleId", "saleItemId", quantity, "unitPrice", "occurredAt", note, "createdAt")
            VALUES ('stock_out', 'sale', $1, $2, $3, $4, $5, $6, $7, 'Sale fulfillment', NOW())`,
           [product.id, availableBatch.id, saleId, saleItemId, item.quantity, item.unitPrice, now]
         );
@@ -306,7 +325,7 @@ async function main() {
       const totalRefund = r.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
       const returnRes = await client.query(
-        `INSERT INTO sale_returns (sale_id, processed_by_id, reason, returned_at, total_refund, created_at, updated_at)
+        `INSERT INTO sale_returns ("saleId", "processedById", reason, "returnedAt", "totalRefund", "createdAt", "updatedAt")
          VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
          RETURNING id`,
         [r.saleId, r.processedBy, r.reason, now, totalRefund]
@@ -319,13 +338,13 @@ async function main() {
         const lineTotal = item.quantity * item.unitPrice;
 
         const saleItem = await client.query(
-          `SELECT si.* FROM sale_items si WHERE si.sale_id = $1 AND si.product_id = $2 LIMIT 1`,
+          `SELECT si.* FROM sale_items si WHERE si."saleId" = $1 AND si."productId" = $2 LIMIT 1`,
           [r.saleId, product.id]
         );
 
         if (saleItem.rows.length > 0) {
           await client.query(
-            `INSERT INTO return_items (return_id, sale_item_id, product_id, quantity, unit_price, line_total, created_at, updated_at)
+            `INSERT INTO return_items ("returnId", "saleItemId", "productId", quantity, "unitPrice", "lineTotal", "createdAt", "updatedAt")
              VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
             [returnId, saleItem.rows[0].id, product.id, item.quantity, item.unitPrice, lineTotal]
           );
@@ -333,12 +352,12 @@ async function main() {
           const availableBatch = batchIds.find((b) => b.productId === product.id);
           if (availableBatch) {
             await client.query(
-              `UPDATE batches SET quantity_on_hand = quantity_on_hand + $1 WHERE id = $2`,
+              `UPDATE batches SET "quantityOnHand" = "quantityOnHand" + $1 WHERE id = $2`,
               [item.quantity, availableBatch.id]
             );
 
             await client.query(
-              `INSERT INTO stock_movements (movement_type, reference_type, product_id, batch_id, return_id, quantity, unit_price, occurred_at, note, created_at)
+              `INSERT INTO stock_movements ("movementType", "referenceType", "productId", "batchId", "returnId", quantity, "unitPrice", "occurredAt", note, "createdAt")
                VALUES ('stock_in', 'return', $1, $2, $3, $4, $5, $6, 'Return restock', NOW())`,
               [product.id, availableBatch.id, returnId, item.quantity, item.unitPrice, now]
             );
@@ -353,9 +372,9 @@ async function main() {
 
     console.log('\n🎉 Seed data created successfully!');
     console.log('\n📋 Test accounts:');
-    console.log('   Admin:    admin@pharmacy.com    / password123');
-    console.log('   Employee: employee@pharmacy.com / password123');
-    console.log('   Customer: customer@pharmacy.com / password123');
+    console.log(`   Admin:    admin@pharmacy.com    / ${DEMO_PASSWORD}`);
+    console.log(`   Employee: employee@pharmacy.com / ${DEMO_PASSWORD}`);
+    console.log(`   Customer: customer@pharmacy.com / ${DEMO_PASSWORD}`);
 
   } catch (error) {
     await client.query('ROLLBACK');
