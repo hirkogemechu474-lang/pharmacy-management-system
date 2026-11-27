@@ -10,59 +10,36 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
   return (
     <div className="auth-screen">
       <section className="auth-brand-panel">
-        <div className="auth-brand-mark">
-          <span />
-          <strong>PharmaFlow</strong>
-        </div>
-        <div className="auth-brand-copy">
-          <h2>Pharmacy ERP System</h2>
-          <p>
-            Secure inventory, sales, purchasing, and reporting workflows for
-            modern pharmacy teams.
-          </p>
-        </div>
-        <div className="auth-brand-insight" aria-hidden="true">
-          <div className="auth-insight-header">
-            <span>Today</span>
-            <strong>Operations pulse</strong>
+        <div className="brand-wrapper">
+          <div className="brand-mark">
+            <span />
+            <strong>PharmaFlow</strong>
           </div>
-          <div className="auth-insight-grid">
-            <div>
-              <span>Stock health</span>
+          <div className="brand-copy">
+            <h2>{title}</h2>
+            <p>{subtitle ?? 'Sign in to manage your pharmacy account.'}</p>
+          </div>
+          <div className="brand-stats" aria-hidden="true">
+            <div className="stat">
               <strong>98%</strong>
+              <span>Stock health</span>
             </div>
-            <div>
-              <span>Orders</span>
+            <div className="stat">
               <strong>42</strong>
+              <span>Active orders</span>
+            </div>
+            <div className="stat">
+              <strong>24/7</strong>
+              <span>Secure access</span>
             </div>
           </div>
-          <div className="auth-insight-list">
-            <span className="auth-insight-row">
-              <i />
-              Inventory synced
-            </span>
-            <span className="auth-insight-row">
-              <i />
-              Purchases reviewed
-            </span>
-            <span className="auth-insight-row">
-              <i />
-              Reports refreshed
-            </span>
-          </div>
+          <div className="brand-glow brand-glow-top" />
+          <div className="brand-glow brand-glow-bottom" />
         </div>
-        <div className="auth-brand-glow auth-brand-glow-top" />
-        <div className="auth-brand-glow auth-brand-glow-bottom" />
       </section>
 
       <section className="auth-panel">
-        <div className="auth-card">
-          <div className="auth-card-header">
-            <h1>{title}</h1>
-            {subtitle ? <p>{subtitle}</p> : null}
-          </div>
-          {children}
-        </div>
+        <div className="auth-card">{children}</div>
       </section>
     </div>
   );
