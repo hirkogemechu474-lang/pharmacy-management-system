@@ -179,6 +179,9 @@ async function main() {
       const res = await client.query(
         `INSERT INTO batches ("productId", "supplierId", "batchNumber", "expiryDate", "receivedQuantity", "quantityOnHand", "quantityReserved", "unitCost", "receivedAt", notes, "createdAt", "updatedAt")
          VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8, 'Seed batch', NOW(), NOW())
+         ON CONFLICT ("productId", "batchNumber", "expiryDate") DO UPDATE SET
+            "quantityOnHand" = EXCLUDED."quantityOnHand",
+            "updatedAt" = NOW()
          RETURNING id`,
         [product.id, supplier.id, b.batchNumber, b.expiry, b.receivedQty, b.onHand, b.unitCost, now]
       );
